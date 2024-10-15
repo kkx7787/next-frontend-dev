@@ -1,6 +1,6 @@
-import type {Metadata} from "next";
+import type { Metadata } from "next";
 import localFont from "next/font/local";
-import AuthContext from "../context/AuthContext"
+import AuthContext from "../context/AuthContext";
 import "./globals.css";
 import Navbar from "./Navbar";
 
@@ -31,8 +31,9 @@ export default function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
         >
         <AuthContext>
-            <Navbar/>
-            {children}
+            <Navbar />
+            {/* 아래에 패딩을 추가하여 네비게이션 바가 콘텐츠와 겹치지 않도록 설정 */}
+            <div className="pt-16">{children}</div>
         </AuthContext>
         </body>
         </html>
