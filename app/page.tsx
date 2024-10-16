@@ -8,12 +8,12 @@ interface Recipe {
     tag: string[];
     ingredients: string[];
     process: string[];
-    version: number; // 버전 정보를 추가
+    version: number;
 }
 
 export default function Home() {
-    const [recipes, setRecipes] = useState<Recipe[]>([]); // 기본값을 빈 배열로 설정
-    const { data: session, status } = useSession(); // 세션 정보를 가져옴
+    const [recipes, setRecipes] = useState<Recipe[]>([]);
+    const { data: session, status } = useSession();
 
     // 로컬 스토리지에서 레시피 불러오기
     useEffect(() => {
@@ -24,8 +24,18 @@ export default function Home() {
                     const parsedRecipes: Recipe[] = JSON.parse(savedRecipes);
 
                     if (Array.isArray(parsedRecipes)) {
-                        // 모든 레시피를 그대로 보여주기 (중복 포함)
-                        setRecipes(parsedRecipes);
+                        // 같은 제목의 레시피 중 가장 최신 버전만 남기기
+                        const uniqueRecipes = Object.values(
+                            parsedRecipes.reduce((acc, recipe) => {
+                                // 제목이 같은 경우 최신 버전으로 덮어씀
+                                if (!acc[recipe.title] || acc[recipe.title].version < recipe.version) {
+                                    acc[recipe.title] = recipe;
+                                }
+                                return acc;
+                            }, {} as { [title: string]: Recipe })
+                        );
+
+                        setRecipes(uniqueRecipes);
                     } else if (parsedRecipes) {
                         setRecipes([parsedRecipes]); // 하나의 레시피인 경우 배열로 변환
                     }
@@ -98,8 +108,8 @@ export default function Home() {
                             {/* 자세히 보기 버튼 */}
                             <Link
                                 href={{
-                                    pathname: `/recipe/${index}`,  // 동적 라우팅 경로로 이동
-                                    query: { recipe: JSON.stringify(recipe) },  // 레시피 데이터를 쿼리로 전달
+                                    pathname: `/recipe/${index}`,
+                                    query: { recipe: JSON.stringify(recipe) },
                                 }}
                             >
                                 <button

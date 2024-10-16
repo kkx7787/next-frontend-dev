@@ -64,11 +64,16 @@ export default function AddRecipe() {
                 }
             }
 
-            // 제목이 같은 레시피가 있는지 확인
-            const existingRecipe = updatedRecipes.find(r => r.title === recipe.title);
-            if (existingRecipe) {
-                // 같은 제목의 레시피가 있으면 version을 1 증가
-                const newVersion = existingRecipe.version + 1;
+            // 제목이 같은 레시피 중에서 가장 높은 버전을 찾음
+            const existingRecipes = updatedRecipes.filter(r => r.title === recipe.title);
+            if (existingRecipes.length > 0) {
+                // 같은 제목의 레시피 중에서 가장 높은 버전을 찾음
+                const highestVersionRecipe = existingRecipes.reduce((highest, current) =>
+                    current.version > highest.version ? current : highest, existingRecipes[0]
+                );
+
+                // 가장 높은 버전에서 1 증가
+                const newVersion = highestVersionRecipe.version + 1;
                 updatedRecipes.push({ ...recipe, version: newVersion });
             } else {
                 // 같은 제목의 레시피가 없으면 version 1로 추가

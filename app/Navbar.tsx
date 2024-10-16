@@ -23,8 +23,8 @@ const Navbar = () => {
         <div className="pb-16">
             <nav
                 className="fixed top-0 left-0 w-full bg-emerald-700 shadow-lg flex justify-between items-center z-50 px-6 py-3">
-                <Link href="/" className="text-white font-bold text-3xl font-serif tracking-wide">
-                    나만의 레시피
+                <Link href="/" className="text-white font-bold text-3xl font-sans tracking-wide">
+                    My Recipe
                 </Link>
 
                 <div className="flex items-center space-x-6">
