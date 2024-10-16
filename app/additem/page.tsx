@@ -9,6 +9,7 @@ interface Recipe {
     ingredients: string[];
     process: string[];
     version: number;
+    timestamp: string;
 }
 
 export default function AddRecipe() {
@@ -20,7 +21,8 @@ export default function AddRecipe() {
         tag: [""],
         ingredients: [""],
         process: [""],
-        version: 1
+        version: 1,
+        timestamp: ""
     });
 
     // 제목, 태그, 재료, 과정 값 변경 처리
@@ -44,7 +46,45 @@ export default function AddRecipe() {
         setRecipe({ ...recipe, [field]: [...recipe[field], ""] });
     };
 
+    // 태그, 재료, 과정 삭제
+    const removeField = (field: "tag" | "ingredients" | "process", index: number) => {
+        if (recipe[field].length > 1) {
+            const updatedArray = [...recipe[field]];
+            updatedArray.splice(index, 1); // 해당 인덱스의 항목을 제거
+            setRecipe({ ...recipe, [field]: updatedArray });
+        }
+    };
+
+    // 필드가 빈 값인지 확인하는 함수
+    const isFieldEmpty = (fields: string[]) => {
+        return fields.some(field => field.trim() === "");
+    };
+
     const saveToLocalStorage = () => {
+        // 현재 시간을 저장
+        const currentTimestamp = new Date().toLocaleString(); // 시간 형식: "YYYY-MM-DD HH:mm:ss"
+
+        // 입력 값이 비어 있는지 확인
+        if (!recipe.title.trim()) {
+            alert("레시피 제목을 입력하세요.");
+            return;
+        }
+
+        if (isFieldEmpty(recipe.tag)) {
+            alert("모든 태그를 입력하세요.");
+            return;
+        }
+
+        if (isFieldEmpty(recipe.ingredients)) {
+            alert("모든 재료를 입력하세요.");
+            return;
+        }
+
+        if (isFieldEmpty(recipe.process)) {
+            alert("모든 과정을 입력하세요.");
+            return;
+        }
+
         if (session) {
             const savedRecipes = localStorage.getItem(JSON.stringify(session.user?.email));
             let updatedRecipes: Recipe[] = [];  // 배열로 초기화
@@ -72,12 +112,12 @@ export default function AddRecipe() {
                     current.version > highest.version ? current : highest, existingRecipes[0]
                 );
 
-                // 가장 높은 버전에서 1 증가
+                // 가장 높은 버전에서 1 증가하고, 현재 시간을 timestamp로 추가
                 const newVersion = highestVersionRecipe.version + 1;
-                updatedRecipes.push({ ...recipe, version: newVersion });
+                updatedRecipes.push({ ...recipe, version: newVersion, timestamp: currentTimestamp });
             } else {
-                // 같은 제목의 레시피가 없으면 version 1로 추가
-                updatedRecipes.push(recipe);
+                // 같은 제목의 레시피가 없으면 version 1로 추가하고, 현재 시간을 timestamp로 추가
+                updatedRecipes.push({ ...recipe, version: 1, timestamp: currentTimestamp });
             }
 
             // 로컬 스토리지에 다시 저장
@@ -126,6 +166,16 @@ export default function AddRecipe() {
                                 placeholder="태그를 입력하세요"
                                 required
                             />
+                            {/* 2개 이상일 때만 삭제 버튼 표시 */}
+                            {recipe.tag.length > 1 && (
+                                <button
+                                    className="bg-red-500 text-white px-2 py-1 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
+                                    onClick={() => removeField("tag", index)}
+                                    type="button"
+                                >
+                                    삭제
+                                </button>
+                            )}
                         </div>
                     ))}
                     <button
@@ -133,7 +183,7 @@ export default function AddRecipe() {
                         onClick={() => addField("tag")}
                         type="button"
                     >
-                        태그 추가
+                        추가
                     </button>
                 </div>
 
@@ -151,14 +201,24 @@ export default function AddRecipe() {
                                 placeholder="재료를 입력하세요"
                                 required
                             />
+                            {/* 2개 이상일 때만 삭제 버튼 표시 */}
+                            {recipe.ingredients.length > 1 && (
+                                <button
+                                    className="bg-red-500 text-white px-2 py-1 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
+                                    onClick={() => removeField("ingredients", index)}
+                                    type="button"
+                                >
+                                    삭제
+                                </button>
+                            )}
                         </div>
                     ))}
                     <button
-                        className="bg-green-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-green-600 transition duration-200"
+                        className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-green-600 transition duration-200"
                         onClick={() => addField("ingredients")}
                         type="button"
                     >
-                        재료 추가
+                        추가
                     </button>
                 </div>
 
@@ -176,20 +236,30 @@ export default function AddRecipe() {
                                 placeholder="과정을 입력하세요"
                                 required
                             />
+                            {/* 2개 이상일 때만 삭제 버튼 표시 */}
+                            {recipe.process.length > 1 && (
+                                <button
+                                    className="bg-red-500 text-white px-2 py-1 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
+                                    onClick={() => removeField("process", index)}
+                                    type="button"
+                                >
+                                    삭제
+                                </button>
+                            )}
                         </div>
                     ))}
                     <button
-                        className="bg-red-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
+                        className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
                         onClick={() => addField("process")}
                         type="button"
                     >
-                        과정 추가
+                        추가
                     </button>
                 </div>
 
                 {/* 로컬 스토리지에 저장하는 버튼 */}
                 <button
-                    className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
+                    className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
                     onClick={saveToLocalStorage}
                     type="button"
                 >

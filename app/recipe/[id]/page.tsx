@@ -9,6 +9,8 @@ interface RecipeDetailProps {
     ingredients: string[];
     process: string[];
     version: number;
+    time: string;
+    timestamp: string; // 수정 또는 저장 시간을 기록하는 필드
 }
 
 export default function RecipeDetail() {
@@ -56,7 +58,7 @@ export default function RecipeDetail() {
                 }, 1000);
                 timers.push(timer);
             } else if (sec === 0 && isRunning[index]) {
-                alert(`타이머 ${index + 1}가 종료되었습니다!`);
+                alert(`${index + 1}번 조리과정이 종료되었습니다!`);
                 const updatedIsRunning = [...isRunning];
                 updatedIsRunning[index] = false;
                 setIsRunning(updatedIsRunning);
@@ -81,14 +83,40 @@ export default function RecipeDetail() {
         }
     };
 
+    // 필드가 빈 값인지 확인하는 함수
+    const isFieldEmpty = (fields: string[]) => {
+        return fields.some(field => field.trim() === "");
+    };
+
     const handleEdit = () => {
+        // 필수 필드가 비어 있는지 검증
+        if (!editedRecipe?.title.trim()) {
+            alert("레시피 제목을 입력하세요.");
+            return;
+        }
+        if (isFieldEmpty(editedRecipe?.tag || [])) {
+            alert("모든 태그를 입력하세요.");
+            return;
+        }
+        if (isFieldEmpty(editedRecipe?.ingredients || [])) {
+            alert("모든 재료를 입력하세요.");
+            return;
+        }
+        if (isFieldEmpty(editedRecipe?.process || [])) {
+            alert("모든 조리 과정을 입력하세요.");
+            return;
+        }
+
         if (session && editedRecipe) {
             const savedRecipes = localStorage.getItem(JSON.stringify(session.user!.email!));
             if (savedRecipes) {
                 const parsedRecipes: RecipeDetailProps[] = JSON.parse(savedRecipes);
 
-                // 새로운 버전으로 변경된 레시피를 생성
-                const newVersionRecipe = { ...editedRecipe, version: editedRecipe.version + 1 };
+                // 현재 시간을 가져옴
+                const currentTimestamp = new Date().toLocaleString();
+
+                // 새로운 버전으로 변경된 레시피를 생성하면서 timestamp 추가
+                const newVersionRecipe = { ...editedRecipe, version: editedRecipe.version + 1, timestamp: currentTimestamp };
 
                 // 기존 레시피 배열에 새로운 버전의 레시피만 추가 (기존 레시피는 수정하지 않음)
                 const updatedRecipes = [...parsedRecipes, newVersionRecipe];
@@ -182,6 +210,7 @@ export default function RecipeDetail() {
                                 name="title"
                                 value={editedRecipe.title}
                                 onChange={handleChange}
+                                required
                             />
                         </div>
 
@@ -194,6 +223,7 @@ export default function RecipeDetail() {
                                         className="form-control pl-2 border"
                                         value={tag}
                                         onChange={(e) => handleArrayChange(e, index, 'tag')}
+                                        required
                                     />
                                     <div className="flex mx-2">
                                         {editedRecipe.tag.length > 1 && (
@@ -224,6 +254,7 @@ export default function RecipeDetail() {
                                         className="form-control pl-2 border"
                                         value={ingredient}
                                         onChange={(e) => handleArrayChange(e, index, 'ingredients')}
+                                        required
                                     />
                                     <div className="flex mx-2">
                                         {editedRecipe.ingredients.length > 1 && (
@@ -254,6 +285,7 @@ export default function RecipeDetail() {
                                         className="form-control pl-2 border"
                                         value={step}
                                         onChange={(e) => handleArrayChange(e, index, 'process')}
+                                        required
                                     />
                                     <div className="flex mx-2">
                                         {editedRecipe.process.length > 1 && (
@@ -295,7 +327,7 @@ export default function RecipeDetail() {
                     <div>
                         {/* 과정 표시 */}
                         <div className="mb-4">
-                            <h2 className="text-2xl font-bold mb-3">현재 레시피 버전: {recipe.version}</h2>
+                            <h2 className="text-2xl font-bold mb-3">현재 레시피 버전: V{recipe.version}</h2>
                             <h3 className="text-lg font-semibold text-gray-700 mb-2">조리 과정</h3>
                             <ul className="ml-6">
                                 {recipe.process.map((step, index) => (
@@ -356,7 +388,7 @@ export default function RecipeDetail() {
                             <ul className="list-disc ml-6">
                                 {history.map((r) => (
                                     <li key={r.version}>
-                                        버전 {r.version} - {new Date().toLocaleDateString()}{" "}
+                                        버전 {r.version} - {r.timestamp}{" "}
                                         <button
                                             className="text-blue-500 underline ml-2"
                                             onClick={() => restoreVersion(r.version)}
