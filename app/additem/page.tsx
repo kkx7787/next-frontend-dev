@@ -1,22 +1,26 @@
 'use client'
 import React, { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface Recipe {
     title: string;
     tag: string[];
     ingredients: string[];
     process: string[];
+    version: number;
 }
 
 export default function AddRecipe() {
-    const { data: session, status } = useSession(); // 세션 정보를 가져옴
+    const { data: session } = useSession(); // 세션 정보를 가져옴
+    const router = useRouter();
 
     const [recipe, setRecipe] = useState({
         title: "",
         tag: [""],
         ingredients: [""],
         process: [""],
+        version: 1
     });
 
     // 제목, 태그, 재료, 과정 값 변경 처리
@@ -26,7 +30,6 @@ export default function AddRecipe() {
         field?: string
     ) => {
         const { name, value } = e.target;
-
         if (name === "title") {
             setRecipe({ ...recipe, [name]: value }); // 제목 업데이트
         } else if (field && index !== undefined) {
@@ -61,14 +64,24 @@ export default function AddRecipe() {
                 }
             }
 
-            // 새 레시피를 기존 배열에 추가
-            updatedRecipes.push(recipe);
+            // 제목이 같은 레시피가 있는지 확인
+            const existingRecipe = updatedRecipes.find(r => r.title === recipe.title);
+            if (existingRecipe) {
+                // 같은 제목의 레시피가 있으면 version을 1 증가
+                const newVersion = existingRecipe.version + 1;
+                updatedRecipes.push({ ...recipe, version: newVersion });
+            } else {
+                // 같은 제목의 레시피가 없으면 version 1로 추가
+                updatedRecipes.push(recipe);
+            }
 
             // 로컬 스토리지에 다시 저장
             localStorage.setItem(JSON.stringify(session.user?.email), JSON.stringify(updatedRecipes));
             alert("레시피가 로컬 스토리지에 저장되었습니다.");
+            router.push('/')
         } else {
-            alert('로그인하셔야 합니다.');
+            alert('로그인이 필요합니다.');
+            router.push('/signin')
         }
     };
 
@@ -108,15 +121,15 @@ export default function AddRecipe() {
                                 placeholder="태그를 입력하세요"
                                 required
                             />
-                            <button
-                                className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-blue-600 transition duration-200"
-                                onClick={() => addField("tag")}
-                                type="button"
-                            >
-                                태그 추가
-                            </button>
                         </div>
                     ))}
+                    <button
+                        className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-blue-600 transition duration-200"
+                        onClick={() => addField("tag")}
+                        type="button"
+                    >
+                        태그 추가
+                    </button>
                 </div>
 
                 {/* 재료 입력 폼 */}
@@ -133,15 +146,15 @@ export default function AddRecipe() {
                                 placeholder="재료를 입력하세요"
                                 required
                             />
-                            <button
-                                className="bg-green-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-green-600 transition duration-200"
-                                onClick={() => addField("ingredients")}
-                                type="button"
-                            >
-                                재료 추가
-                            </button>
                         </div>
                     ))}
+                    <button
+                        className="bg-green-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-green-600 transition duration-200"
+                        onClick={() => addField("ingredients")}
+                        type="button"
+                    >
+                        재료 추가
+                    </button>
                 </div>
 
                 {/* 과정 입력 폼 */}
@@ -158,15 +171,15 @@ export default function AddRecipe() {
                                 placeholder="과정을 입력하세요"
                                 required
                             />
-                            <button
-                                className="bg-red-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
-                                onClick={() => addField("process")}
-                                type="button"
-                            >
-                                과정 추가
-                            </button>
                         </div>
                     ))}
+                    <button
+                        className="bg-red-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
+                        onClick={() => addField("process")}
+                        type="button"
+                    >
+                        과정 추가
+                    </button>
                 </div>
 
                 {/* 로컬 스토리지에 저장하는 버튼 */}

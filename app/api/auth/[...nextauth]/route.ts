@@ -10,7 +10,7 @@ interface User {
 }
 
 const handler = NextAuth({
-    providers : [
+    providers: [
         GoogleProvider({
             clientId: process.env.AUTH_GOOGLE_ID!,
             clientSecret: process.env.AUTH_GOOGLE_SECRET!
@@ -22,14 +22,14 @@ const handler = NextAuth({
         CredentialsProvider({
             name: 'Credentials',
             credentials: {
-                email: { label : "email", type: "email" },
+                email: { label: "email", type: "email" },
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
                 const { email, password } = credentials || {};
-                if(email && password) {
+                if (email && password) {
                     const user: User = {
-                        id: '1',  // id를 문자열로 변환
+                        id: '1',
                         email: email!,
                         username: email!.split('@')[0],
                     };
@@ -39,8 +39,11 @@ const handler = NextAuth({
                 }
             }
         })
-    ], callbacks : {
+    ],
+    secret: process.env.AUTH_SECRET,
+    callbacks: {
 
     }
 });
+
 export { handler as GET, handler as POST };
