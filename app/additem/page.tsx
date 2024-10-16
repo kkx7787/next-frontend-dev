@@ -1,21 +1,48 @@
-'use client'
+'use client';
 import React, { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Recipe from "../../types/index";
 
-interface Recipe {
-    title: string;
-    tag: string[];
-    ingredients: string[];
-    process: string[];
-    version: number;
-    timestamp: string;
-}
+const FieldList = ({ label, field, values, onChange, addField, removeField }: any) => (
+    <div className="mb-6">
+        <label className="block text-xl font-semibold mb-2 text-gray-700">{label}</label>
+        {values.map((value: string, index: number) => (
+            <div key={index} className="flex items-center mb-3">
+                <input
+                    type="text"
+                    value={value}
+                    className="block flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => onChange(e, index, field)}
+                    placeholder={`${label} 입력`}
+                    required
+                />
+                {values.length > 1 && (
+                    <button
+                        className="bg-red-500 text-white px-2 py-1 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
+                        onClick={() => removeField(field, index)}
+                        type="button"
+                    >
+                        삭제
+                    </button>
+                )}
+            </div>
+        ))}
+        <button
+            className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-blue-600 transition duration-200"
+            onClick={() => addField(field)}
+            type="button"
+        >
+            추가
+        </button>
+    </div>
+);
 
 export default function AddRecipe() {
     const { data: session } = useSession(); // 세션 정보를 가져옴
     const router = useRouter();
 
+    // 레시피 상태 관리
     const [recipe, setRecipe] = useState({
         title: "",
         tag: [""],
@@ -26,11 +53,7 @@ export default function AddRecipe() {
     });
 
     // 제목, 태그, 재료, 과정 값 변경 처리
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-        index?: number,
-        field?: string
-    ) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index?: number, field?: string) => {
         const { name, value } = e.target;
         if (name === "title") {
             setRecipe({ ...recipe, [name]: value }); // 제목 업데이트
@@ -41,12 +64,12 @@ export default function AddRecipe() {
         }
     };
 
-    // 태그, 재료, 과정 추가
+    // 필드 추가
     const addField = (field: "tag" | "ingredients" | "process") => {
         setRecipe({ ...recipe, [field]: [...recipe[field], ""] });
     };
 
-    // 태그, 재료, 과정 삭제
+    // 필드 삭제
     const removeField = (field: "tag" | "ingredients" | "process", index: number) => {
         if (recipe[field].length > 1) {
             const updatedArray = [...recipe[field]];
@@ -56,12 +79,10 @@ export default function AddRecipe() {
     };
 
     // 필드가 빈 값인지 확인하는 함수
-    const isFieldEmpty = (fields: string[]) => {
-        return fields.some(field => field.trim() === "");
-    };
+    const isFieldEmpty = (fields: string[]) => fields.some(field => field.trim() === "");
 
+    // 레시피 저장 함수
     const saveToLocalStorage = () => {
-        // 현재 시간을 저장
         const currentTimestamp = new Date().toLocaleString(); // 시간 형식: "YYYY-MM-DD HH:mm:ss"
 
         // 입력 값이 비어 있는지 확인
@@ -69,17 +90,14 @@ export default function AddRecipe() {
             alert("레시피 제목을 입력하세요.");
             return;
         }
-
         if (isFieldEmpty(recipe.tag)) {
             alert("모든 태그를 입력하세요.");
             return;
         }
-
         if (isFieldEmpty(recipe.ingredients)) {
             alert("모든 재료를 입력하세요.");
             return;
         }
-
         if (isFieldEmpty(recipe.process)) {
             alert("모든 과정을 입력하세요.");
             return;
@@ -87,46 +105,30 @@ export default function AddRecipe() {
 
         if (session) {
             const savedRecipes = localStorage.getItem(JSON.stringify(session.user?.email));
-            let updatedRecipes: Recipe[] = [];  // 배열로 초기화
+            let updatedRecipes: Recipe[] = [];
 
             if (savedRecipes) {
                 try {
                     const parsedRecipes = JSON.parse(savedRecipes);
-
-                    // 불러온 데이터가 배열인지 확인, 아니면 빈 배열로 설정
-                    if (Array.isArray(parsedRecipes)) {
-                        updatedRecipes = parsedRecipes;
-                    } else {
-                        console.error("저장된 레시피 데이터가 배열이 아닙니다. 빈 배열로 초기화합니다.");
-                    }
+                    updatedRecipes = Array.isArray(parsedRecipes) ? parsedRecipes : [];
                 } catch (error) {
                     console.error("로컬 스토리지에서 레시피를 불러오는 중 오류 발생:", error);
                 }
             }
 
-            // 제목이 같은 레시피 중에서 가장 높은 버전을 찾음
             const existingRecipes = updatedRecipes.filter(r => r.title === recipe.title);
-            if (existingRecipes.length > 0) {
-                // 같은 제목의 레시피 중에서 가장 높은 버전을 찾음
-                const highestVersionRecipe = existingRecipes.reduce((highest, current) =>
-                    current.version > highest.version ? current : highest, existingRecipes[0]
-                );
+            const newVersion = existingRecipes.length > 0
+                ? Math.max(...existingRecipes.map(r => r.version)) + 1
+                : 1;
 
-                // 가장 높은 버전에서 1 증가하고, 현재 시간을 timestamp로 추가
-                const newVersion = highestVersionRecipe.version + 1;
-                updatedRecipes.push({ ...recipe, version: newVersion, timestamp: currentTimestamp });
-            } else {
-                // 같은 제목의 레시피가 없으면 version 1로 추가하고, 현재 시간을 timestamp로 추가
-                updatedRecipes.push({ ...recipe, version: 1, timestamp: currentTimestamp });
-            }
+            updatedRecipes.push({ ...recipe, version: newVersion, timestamp: currentTimestamp });
 
-            // 로컬 스토리지에 다시 저장
             localStorage.setItem(JSON.stringify(session.user?.email), JSON.stringify(updatedRecipes));
             alert("레시피가 로컬 스토리지에 저장되었습니다.");
-            router.push('/')
+            router.push('/');
         } else {
             alert('로그인이 필요합니다.');
-            router.push('/signin')
+            router.push('/signin');
         }
     };
 
@@ -152,112 +154,31 @@ export default function AddRecipe() {
                     />
                 </div>
 
-                {/* 태그 입력 폼 */}
-                <div className="mb-6">
-                    <label className="block text-xl font-semibold mb-2 text-gray-700">태그</label>
-                    {recipe.tag.map((tag, index) => (
-                        <div key={index} className="flex items-center mb-3">
-                            <input
-                                type="text"
-                                name="tag"
-                                className="block flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                value={tag}
-                                onChange={(e) => handleChange(e, index, "tag")}
-                                placeholder="태그를 입력하세요"
-                                required
-                            />
-                            {/* 2개 이상일 때만 삭제 버튼 표시 */}
-                            {recipe.tag.length > 1 && (
-                                <button
-                                    className="bg-red-500 text-white px-2 py-1 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
-                                    onClick={() => removeField("tag", index)}
-                                    type="button"
-                                >
-                                    삭제
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                    <button
-                        className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-blue-600 transition duration-200"
-                        onClick={() => addField("tag")}
-                        type="button"
-                    >
-                        추가
-                    </button>
-                </div>
+                <FieldList
+                    label="태그"
+                    field="tag"
+                    values={recipe.tag}
+                    onChange={handleChange}
+                    addField={addField}
+                    removeField={removeField}
+                />
+                <FieldList
+                    label="재료"
+                    field="ingredients"
+                    values={recipe.ingredients}
+                    onChange={handleChange}
+                    addField={addField}
+                    removeField={removeField}
+                />
+                <FieldList
+                    label="과정"
+                    field="process"
+                    values={recipe.process}
+                    onChange={handleChange}
+                    addField={addField}
+                    removeField={removeField}
+                />
 
-                {/* 재료 입력 폼 */}
-                <div className="mb-6">
-                    <label className="block text-xl font-semibold mb-2 text-gray-700">재료</label>
-                    {recipe.ingredients.map((ingredient, index) => (
-                        <div key={index} className="flex items-center mb-3">
-                            <input
-                                type="text"
-                                name="ingredients"
-                                className="block flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                value={ingredient}
-                                onChange={(e) => handleChange(e, index, "ingredients")}
-                                placeholder="재료를 입력하세요"
-                                required
-                            />
-                            {/* 2개 이상일 때만 삭제 버튼 표시 */}
-                            {recipe.ingredients.length > 1 && (
-                                <button
-                                    className="bg-red-500 text-white px-2 py-1 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
-                                    onClick={() => removeField("ingredients", index)}
-                                    type="button"
-                                >
-                                    삭제
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                    <button
-                        className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-green-600 transition duration-200"
-                        onClick={() => addField("ingredients")}
-                        type="button"
-                    >
-                        추가
-                    </button>
-                </div>
-
-                {/* 과정 입력 폼 */}
-                <div className="mb-6">
-                    <label className="block text-xl font-semibold mb-2 text-gray-700">과정</label>
-                    {recipe.process.map((step, index) => (
-                        <div key={index} className="flex items-center mb-3">
-                            <input
-                                type="text"
-                                name="process"
-                                className="block flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                value={step}
-                                onChange={(e) => handleChange(e, index, "process")}
-                                placeholder="과정을 입력하세요"
-                                required
-                            />
-                            {/* 2개 이상일 때만 삭제 버튼 표시 */}
-                            {recipe.process.length > 1 && (
-                                <button
-                                    className="bg-red-500 text-white px-2 py-1 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
-                                    onClick={() => removeField("process", index)}
-                                    type="button"
-                                >
-                                    삭제
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                    <button
-                        className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-lg hover:bg-red-600 transition duration-200"
-                        onClick={() => addField("process")}
-                        type="button"
-                    >
-                        추가
-                    </button>
-                </div>
-
-                {/* 로컬 스토리지에 저장하는 버튼 */}
                 <button
                     className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
                     onClick={saveToLocalStorage}

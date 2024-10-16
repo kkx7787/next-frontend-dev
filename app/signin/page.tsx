@@ -5,22 +5,81 @@ import React, { useState } from 'react';
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 
+// 로그인 폼 컴포넌트
+const SignInForm = ({ credentials, handleChange, handleSubmit }: any) => (
+    <form onSubmit={handleSubmit} className="space-y-6">
+        <InputField
+            id="email"
+            type="email"
+            label="Email"
+            value={credentials.email}
+            placeholder="your-email@example.com"
+            onChange={handleChange}
+        />
+        <InputField
+            id="password"
+            type="password"
+            label="Password"
+            value={credentials.password}
+            placeholder="Password"
+            onChange={handleChange}
+        />
+        <SubmitButton label="Login" />
+    </form>
+);
+
+// 입력 필드 컴포넌트
+const InputField = ({ id, type, label, value, placeholder, onChange }: any) => (
+    <div>
+        <label htmlFor={id} className="block text-left text-sm font-semibold text-gray-600">
+            {label}
+        </label>
+        <input
+            id={id}
+            name={id}
+            type={type}
+            value={value}
+            onChange={onChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            placeholder={placeholder}
+            required
+        />
+    </div>
+);
+
+// 제출 버튼 컴포넌트
+const SubmitButton = ({ label }: { label: string }) => (
+    <button
+        type="submit"
+        className="w-full bg-emerald-700 text-white py-2 rounded-lg font-semibold hover:bg-emerald-800 transition duration-200"
+    >
+        {label}
+    </button>
+);
+
+// 소셜 로그인 버튼 컴포넌트
+const SocialSignInButton = ({ provider, icon, label }: any) => (
+    <button
+        className="flex items-center justify-center w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition duration-200"
+        onClick={() => signIn(provider, { callbackUrl: "/" })}
+    >
+        {icon}
+        <span className="text-lg">{label}</span>
+    </button>
+);
+
 export default function SignInPage() {
-    const [credentials, setCredentials] = useState({
-        email: "",
-        password: "",
-    });
+    const [credentials, setCredentials] = useState({ email: "", password: "" });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setCredentials({
             ...credentials,
-            [e.target.name]: e.target.value,  // input name에 따라 상태 업데이트
+            [e.target.name]: e.target.value, // input name에 따라 상태 업데이트
         });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         const result = await signIn("credentials", {
             redirect: true,
             email: credentials.email,
@@ -42,60 +101,19 @@ export default function SignInPage() {
                     <Image src="/image/login.png" alt="Login Image" width={100} height={30} />
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label htmlFor="email" className="block text-left text-sm font-semibold text-gray-600">
-                            Email
-                        </label>
-                        <input
-                            id="email"
-                            type="email"
-                            name="email"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            value={credentials.email}
-                            onChange={handleChange}
-                            placeholder="your-email@example.com"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="password" className="block text-left text-sm font-semibold text-gray-600">
-                            Password
-                        </label>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            value={credentials.password}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            placeholder="Password"
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full bg-emerald-700 text-white py-2 rounded-lg font-semibold hover:bg-emerald-800 transition duration-200"
-                    >
-                        Login
-                    </button>
-                </form>
+                <SignInForm credentials={credentials} handleChange={handleChange} handleSubmit={handleSubmit} />
 
                 <div className="mt-8 space-y-4">
-                    <button
-                        className="flex items-center justify-center w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition duration-200"
-                        onClick={() => signIn('google', { callbackUrl: "/" })}
-                    >
-                        <FcGoogle className="mr-3" size={24} />
-                        <span className="text-lg">Sign in with Google</span>
-                    </button>
-                    <button
-                        className="flex items-center justify-center w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition duration-200"
-                        onClick={() => signIn('github', { callbackUrl: "/" })}
-                    >
-                        <FaGithub className="mr-3" size={24} />
-                        <span className="text-lg">Sign in with Github</span>
-                    </button>
+                    <SocialSignInButton
+                        provider="google"
+                        icon={<FcGoogle className="mr-3" size={24} />}
+                        label="Sign in with Google"
+                    />
+                    <SocialSignInButton
+                        provider="github"
+                        icon={<FaGithub className="mr-3" size={24} />}
+                        label="Sign in with Github"
+                    />
                 </div>
             </div>
         </section>

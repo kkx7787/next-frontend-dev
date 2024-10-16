@@ -2,28 +2,19 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-
-interface RecipeDetailProps {
-    title: string;
-    tag: string[];
-    ingredients: string[];
-    process: string[];
-    version: number;
-    time: string;
-    timestamp: string; // 수정 또는 저장 시간을 기록하는 필드
-}
+import Recipe from "../../../types/index"
 
 export default function RecipeDetail() {
     const [times, setTimes] = useState<string[]>([]);
-    const [recipe, setRecipe] = useState<RecipeDetailProps | null>(null);
+    const [recipe, setRecipe] = useState<Recipe| null>(null);
     const [isEditing, setIsEditing] = useState(false);
-    const [editedRecipe, setEditedRecipe] = useState<RecipeDetailProps | null>(null);
+    const [editedRecipe, setEditedRecipe] = useState<Recipe | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const { data: session } = useSession();
     const [seconds, setSeconds] = useState<number[]>([]);
     const [isRunning, setIsRunning] = useState<boolean[]>([]);
-    const [history, setHistory] = useState<RecipeDetailProps[]>([]);
+    const [history, setHistory] = useState<Recipe[]>([]);
 
     useEffect(() => {
         const recipeQuery = searchParams.get('recipe');
@@ -36,7 +27,7 @@ export default function RecipeDetail() {
                 if (session) {
                     const savedRecipes = localStorage.getItem(JSON.stringify(session.user!.email!));
                     if (savedRecipes) {
-                        const parsedRecipes: RecipeDetailProps[] = JSON.parse(savedRecipes);
+                        const parsedRecipes: Recipe[] = JSON.parse(savedRecipes);
                         const historyRecipes = parsedRecipes.filter(r => r.title === parsedRecipe.title);
                         setHistory(historyRecipes);
                     }
@@ -74,7 +65,7 @@ export default function RecipeDetail() {
                 const savedRecipes = localStorage.getItem(JSON.stringify(session.user!.email!));
                 if (savedRecipes) {
                     const parsedRecipes = JSON.parse(savedRecipes);
-                    const updatedRecipes = parsedRecipes.filter((r: RecipeDetailProps) => r.title !== recipe?.title);
+                    const updatedRecipes = parsedRecipes.filter((r: Recipe) => r.title !== recipe?.title);
                     localStorage.setItem(JSON.stringify(session.user?.email), JSON.stringify(updatedRecipes));
                     alert("레시피가 삭제되었습니다.");
                     router.push('/');
@@ -110,7 +101,7 @@ export default function RecipeDetail() {
         if (session && editedRecipe) {
             const savedRecipes = localStorage.getItem(JSON.stringify(session.user!.email!));
             if (savedRecipes) {
-                const parsedRecipes: RecipeDetailProps[] = JSON.parse(savedRecipes);
+                const parsedRecipes: Recipe[] = JSON.parse(savedRecipes);
 
                 // 현재 시간을 가져옴
                 const currentTimestamp = new Date().toLocaleString();
